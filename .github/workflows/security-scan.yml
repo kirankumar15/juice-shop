@@ -1,0 +1,299 @@
+name: "Comprehensive Security Scan"
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of scan to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - sast
+          - sca
+          - dast
+          - sbom
+
+jobs:
+  sast-scan:
+    name: Static Application Security Testing
+    if: ${{ github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'sast' || github.event.inputs.scan_type == null }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # CodeQL Analysis
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+          config: |
+            paths-ignore:
+              - 'data/static/codefixes'
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+
+      # NodeJsScan - Additional SAST tool specific for Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install nodejsscan
+        run: npm install -g @ajinabraham/njsscan
+
+      - name: Run nodejsscan
+        run: |
+          mkdir -p reports/nodejsscan
+          nodejsscan -d ${{ github.workspace }} -o reports/nodejsscan/report.json
+
+      - name: Upload nodejsscan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodejsscan-results
+          path: reports/nodejsscan/report.json
+
+      # ESLint Security Plugin
+      - name: Install dependencies
+        run: |
+          npm install
+          cd frontend
+          npm install --legacy-peer-deps
+          cd ..
+
+      - name: Install ESLint security plugins
+        run: |
+          npm install --save-dev eslint-plugin-security eslint-plugin-node eslint-plugin-sonarjs
+
+      - name: Create ESLint security config
+        run: |
+          cat > .eslintrc.security.json << 'EOF'
+          {
+            "extends": [
+              "plugin:security/recommended",
+              "plugin:sonarjs/recommended"
+            ],
+            "plugins": [
+              "security",
+              "sonarjs"
+            ]
+          }
+          EOF
+
+      - name: Run ESLint security scan
+        run: |
+          mkdir -p reports/eslint
+          npx eslint -c .eslintrc.security.json --format json --output-file reports/eslint/security-report.json "**/*.{js,ts}"
+
+      - name: Upload ESLint security results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-security-results
+          path: reports/eslint/security-report.json
+
+  sca-scan:
+    name: Software Composition Analysis
+    if: ${{ github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'sca' || github.event.inputs.scan_type == null }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # OWASP Dependency Check
+      - name: Install dependencies
+        run: |
+          npm install
+          cd frontend
+          npm install --legacy-peer-deps
+          cd ..
+
+      # npm audit
+      - name: Run npm audit
+        run: |
+          mkdir -p reports/npm-audit
+          npm audit --json > reports/npm-audit/npm-audit-report.json || true
+          cd frontend
+          npm audit --json > ../reports/npm-audit/frontend-npm-audit-report.json || true
+          cd ..
+
+      - name: Upload npm audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: reports/npm-audit/
+
+      # Snyk SCA
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --all-projects --json-file-output=reports/snyk/snyk-report.json
+
+      - name: Upload Snyk results
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-results
+          path: reports/snyk/snyk-report.json
+
+  sbom-generation:
+    name: Software Bill of Materials Generation
+    if: ${{ github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'sbom' || github.event.inputs.scan_type == null }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          cd frontend
+          npm install --legacy-peer-deps
+          cd ..
+
+      # CycloneDX SBOM
+      - name: Install CycloneDX CLI
+        run: npm install -g @cyclonedx/cyclonedx-npm
+
+      - name: Generate CycloneDX SBOM
+        run: |
+          mkdir -p reports/sbom
+          cyclonedx-npm --output-format JSON --output-file reports/sbom/bom.json
+          cyclonedx-npm --output-format XML --output-file reports/sbom/bom.xml
+
+      # SPDX SBOM
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Install SPDX SBOM Generator
+        run: |
+          go install github.com/spdx/spdx-sbom-generator/cmd/generator@latest
+          mv $(go env GOPATH)/bin/generator $(go env GOPATH)/bin/spdx-sbom-generator
+
+      - name: Generate SPDX SBOM
+        run: |
+          # Create package manager hint file
+          echo "nodejs" > .scanner.conf
+          spdx-sbom-generator -p . -o reports/sbom
+
+      - name: Upload SBOM files
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-files
+          path: reports/sbom/
+
+  dast-scan:
+    name: Dynamic Application Security Testing
+    if: ${{ github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'dast' || github.event.inputs.scan_type == null }}
+    runs-on: ubuntu-latest
+    needs: [sast-scan, sca-scan]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          cd frontend
+          npm install --legacy-peer-deps
+          cd ..
+
+      - name: Build application
+        run: |
+          npm run build:frontend
+          npm run build:server
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 30
+
+      # ZAP Scan
+      - name: ZAP Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target: 'http://localhost:3000'
+          cmd_options: '-a -j'
+
+  security-report:
+    name: Generate Security Report
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs: [sast-scan, sca-scan, sbom-generation, dast-scan]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: Generate HTML report
+        run: |
+          mkdir -p security-report
+          echo "<html><head><title>Security Scan Report</title></head><body>" > security-report/index.html
+          echo "<h1>Security Scan Report</h1>" >> security-report/index.html
+          echo "<h2>Generated on $(date)</h2>" >> security-report/index.html
+          
+          echo "<h2>SAST Results</h2>" >> security-report/index.html
+          echo "<p>See CodeQL results in GitHub Security tab</p>" >> security-report/index.html
+          
+          echo "<h2>SCA Results</h2>" >> security-report/index.html
+          echo "<pre>" >> security-report/index.html
+          cat all-artifacts/npm-audit-results/npm-audit-report.json >> security-report/index.html || echo "No npm audit results found" >> security-report/index.html
+          echo "</pre>" >> security-report/index.html
+          
+          echo "<h2>SBOM</h2>" >> security-report/index.html
+          echo "<p>SBOM files are available as artifacts</p>" >> security-report/index.html
+          
+          echo "<h2>DAST Results</h2>" >> security-report/index.html
+          echo "<p>See ZAP scan results in GitHub Actions</p>" >> security-report/index.html
+          
+          echo "</body></html>" >> security-report/index.html
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report/
