@@ -4,9 +4,7 @@
  */
 
 import chai = require('chai')
-import sinonChai = require('sinon-chai')
 const expect = chai.expect
-chai.use(sinonChai)
 
 describe('Security Features', () => {
   const securityFeatures = require('../../lib/securityFeatures')

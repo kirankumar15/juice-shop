@@ -17,9 +17,7 @@ export const securityFeatures: SecurityFeatures = {
   securityLogs: config.get('security.securityLogs.enabled') as boolean
 }
 
-export const isSecurityFeatureEnabled = (feature: keyof SecurityFeatures): boolean => {
-  return securityFeatures[feature]
-}
+export const isSecurityFeatureEnabled = (feature: keyof SecurityFeatures): boolean => Boolean(securityFeatures[feature])
 
 export const getCspDirectives = (): Record<string, string[]> => {
   if (!isSecurityFeatureEnabled('csp')) {

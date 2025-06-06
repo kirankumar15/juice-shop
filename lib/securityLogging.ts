@@ -7,9 +7,10 @@ import { type Request, type Response, type NextFunction } from 'express'
 import logger from './logger'
 import { isSecurityFeatureEnabled } from './securityFeatures'
 
-export const securityLogger = (req: Request, res: Response, next: NextFunction) => {
+export const securityLogger = (req: Request, res: Response, next: NextFunction): void => {
   if (!isSecurityFeatureEnabled('securityLogs')) {
-    next(); return
+    void next()
+    return
   }
 
   // Log authentication attempts
@@ -36,7 +37,7 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction) 
     return originalSend.call(this, body)
   }
 
-  next()
+  void next()
 }
 
 export default securityLogger

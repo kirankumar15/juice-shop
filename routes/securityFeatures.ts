@@ -15,7 +15,7 @@ export const getSecurityFeatures = () => (req: Request, res: Response) => {
 
 export const updateSecurityFeature = () => (req: Request, res: Response) => {
   const feature = req.params.feature
-  const enabled = req.body.enabled === true
+  const enabled = Boolean(req.body.enabled)
 
   if (!Object.prototype.hasOwnProperty.call(securityFeatures, feature)) {
     return res.status(400).json({ status: 'error', message: 'Invalid security feature' })
