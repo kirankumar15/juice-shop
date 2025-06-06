@@ -194,8 +194,15 @@ jobs:
           cyclonedx-npm --output-format XML --output-file reports/sbom/bom.xml
 
       # SPDX SBOM
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
       - name: Install SPDX SBOM Generator
-        run: npm install -g spdx-sbom-generator
+        run: |
+          go install github.com/spdx/spdx-sbom-generator/cmd/generator@latest
+          mv $(go env GOPATH)/bin/generator $(go env GOPATH)/bin/spdx-sbom-generator
 
       - name: Generate SPDX SBOM
         run: |
