@@ -17,12 +17,10 @@ export const securityFeatures: SecurityFeatures = {
   securityLogs: config.get('security.securityLogs.enabled') as boolean
 }
 
-export const isSecurityFeatureEnabled = (feature: keyof SecurityFeatures): boolean => Boolean(securityFeatures[feature])
+export const isSecurityFeatureEnabled = (feature: keyof SecurityFeatures): boolean => securityFeatures[feature]
 
 export const getCspDirectives = (): Record<string, string[]> => {
-  if (!isSecurityFeatureEnabled('csp')) {
-    return {}
-  }
+  if (!securityFeatures.csp) return {}
 
   return {
     defaultSrc: ["'self'"],
@@ -37,9 +35,7 @@ export const getCspDirectives = (): Record<string, string[]> => {
 }
 
 export const getAdditionalSecurityHeaders = (): Record<string, string> => {
-  if (!isSecurityFeatureEnabled('additionalSecurityHeaders')) {
-    return {}
-  }
+  if (!securityFeatures.additionalSecurityHeaders) return {}
 
   return {
     'X-Content-Type-Options': 'nosniff',

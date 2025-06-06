@@ -9,7 +9,7 @@ import { isSecurityFeatureEnabled } from './securityFeatures'
 
 export const securityLogger = (req: Request, res: Response, next: NextFunction): void => {
   if (!isSecurityFeatureEnabled('securityLogs')) {
-    void next()
+    next()
     return
   }
 
@@ -36,8 +36,7 @@ export const securityLogger = (req: Request, res: Response, next: NextFunction):
     }
     return originalSend.call(this, body)
   }
-
-  void next()
+  next()
 }
 
 export default securityLogger
