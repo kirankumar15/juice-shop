@@ -48,6 +48,7 @@ For a detailed introduction, full list of features and architecture overview ple
     - [Node.js version compatibility](#nodejs-version-compatibility)
     - [Troubleshooting](#troubleshooting)
     - [Official companion guide](#official-companion-guide)
+    - [Security Scanning](#security-scanning)
 - [Contributing](#contributing)
 - [References](#references)
 - [Merchandise](#merchandise)
@@ -183,6 +184,37 @@ and is available **for free** in PDF, Kindle and ePub format on LeanPub. You can
 
 [<img alt="Pwning OWASP Juice Shop cover" src="https://raw.githubusercontent.com/juice-shop/pwning-juice-shop/master/docs/modules/ROOT/assets/images/cover.jpg" width="200"/>](https://leanpub.com/juice-shop)
 [<img alt="Pwning OWASP Juice Shop back cover" src="https://raw.githubusercontent.com/juice-shop/pwning-juice-shop/master/docs/modules/ROOT/assets/images/introduction/back.jpg" width="200"/>](https://leanpub.com/juice-shop)
+
+### Security Scanning
+
+[![Comprehensive Security Scan](https://github.com/juice-shop/juice-shop/workflows/Comprehensive%20Security%20Scan/badge.svg)](https://github.com/juice-shop/juice-shop/actions?query=workflow%3A%22Comprehensive+Security+Scan%22)
+[![CodeQL Scan](https://github.com/juice-shop/juice-shop/workflows/CodeQL%20Scan/badge.svg)](https://github.com/juice-shop/juice-shop/actions?query=workflow%3A%22CodeQL+Scan%22)
+[![ZAP Baseline Scan](https://github.com/juice-shop/juice-shop/workflows/ZAP%20Baseline%20Scan/badge.svg)](https://github.com/juice-shop/juice-shop/actions?query=workflow%3A%22ZAP+Baseline+Scan%22)
+
+OWASP Juice Shop includes comprehensive security scanning capabilities:
+
+- **SAST** (Static Application Security Testing)
+- **SCA** (Software Composition Analysis)
+- **SBOM** (Software Bill of Materials) generation
+- **DAST** (Dynamic Application Security Testing)
+
+You can run security scans locally using the following npm scripts:
+
+```bash
+# Run all security scans
+npm run security-scan
+
+# Run only SAST scan
+npm run security-scan:sast
+
+# Run only SCA scan
+npm run security-scan:sca
+
+# Generate only SBOM
+npm run security-scan:sbom
+```
+
+For detailed information about the security scanning capabilities, please refer to the [SECURITY-SCANNING.md](SECURITY-SCANNING.md) documentation.
 
 ## Contributing
 
