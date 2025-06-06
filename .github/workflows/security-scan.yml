@@ -206,6 +206,8 @@ jobs:
 
       - name: Generate SPDX SBOM
         run: |
+          # Create package manager hint file
+          echo "nodejs" > .scanner.conf
           spdx-sbom-generator -p . -o reports/sbom
 
       - name: Upload SBOM files
