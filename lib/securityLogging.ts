@@ -9,7 +9,7 @@ import { isSecurityFeatureEnabled } from './securityFeatures'
 
 export const securityLogger = (req: Request, res: Response, next: NextFunction) => {
   if (!isSecurityFeatureEnabled('securityLogs')) {
-    return next()
+    next(); return
   }
 
   // Log authentication attempts

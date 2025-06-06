@@ -191,12 +191,12 @@ restoreOverwrittenFilesWithOriginals().then(() => {
       payment: ["'self'"]
     }
   }))
-  
+
   /* Enhanced Security Features */
   import { getCspDirectives, getAdditionalSecurityHeaders, isSecurityFeatureEnabled } from './lib/securityFeatures'
   import securityLogger from './lib/securityLogging'
   import { cspReport } from './routes/cspReport'
-  
+
   // Apply Content Security Policy if enabled
   if (isSecurityFeatureEnabled('csp')) {
     app.use(helmet.contentSecurityPolicy({
@@ -204,7 +204,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
       reportOnly: true // Use report-only mode to not break functionality
     }))
   }
-  
+
   // Apply additional security headers if enabled
   if (isSecurityFeatureEnabled('additionalHeaders')) {
     const additionalHeaders = getAdditionalSecurityHeaders()
@@ -215,10 +215,10 @@ restoreOverwrittenFilesWithOriginals().then(() => {
       next()
     })
   }
-  
+
   // Apply security logging if enabled
   app.use(securityLogger)
-  
+
   // CSP violation reporting endpoint
   app.post('/api/csp/report', cspReport())
 

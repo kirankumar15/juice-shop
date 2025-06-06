@@ -18,7 +18,7 @@ export const securityFeatures: SecurityFeatures = {
 }
 
 export const isSecurityFeatureEnabled = (feature: keyof SecurityFeatures): boolean => {
-  return securityFeatures[feature] === true
+  return securityFeatures[feature]
 }
 
 export const getCspDirectives = (): Record<string, string[]> => {
