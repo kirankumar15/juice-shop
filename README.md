@@ -153,6 +153,16 @@ Please make sure you stay up to date with your chosen version.
 
 \*= :warning: _There are no pre-built binaries for `libxmljs` available for Node.js versions greater than 20.x. In order to build Juice Shop from source locally, you need to have all C++ build tools installed that are needed to compile those binaries locally. In the packaged distributions theses binaries are already included. We are working on a pure JavaScript replacement of `libxmljs` in [#2421](https://github.com/juice-shop/juice-shop/issues/2421). Contributions are highly welcome!_
 
+### Security Features
+
+OWASP Juice Shop includes optional security features that can be enabled for demonstration purposes. These features include:
+
+- Content Security Policy (CSP)
+- Additional Security Headers
+- Security Logging
+
+For more information, see [SECURITY_FEATURES.md](SECURITY_FEATURES.md).
+
 ### Troubleshooting
 
 [![Gitter](http://img.shields.io/badge/gitter-join%20chat-1dce73.svg)](https://gitter.im/bkimminich/juice-shop)

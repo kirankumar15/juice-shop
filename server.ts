@@ -113,6 +113,7 @@ import { nftMintListener, walletNFTVerify } from './routes/nftMint'
 import { createProductReviews } from './routes/createProductReviews'
 import { getWalletBalance, addWalletBalance } from './routes/wallet'
 import { retrieveAppConfiguration } from './routes/appConfiguration'
+import { getSecurityFeatures, updateSecurityFeature } from './routes/securityFeatures'
 import { updateProductReviews } from './routes/updateProductReviews'
 import { servePrivacyPolicyProof } from './routes/privacyPolicyProof'
 import { profileImageUrlUpload } from './routes/profileImageUrlUpload'
@@ -190,6 +191,36 @@ restoreOverwrittenFilesWithOriginals().then(() => {
       payment: ["'self'"]
     }
   }))
+  
+  /* Enhanced Security Features */
+  import { getCspDirectives, getAdditionalSecurityHeaders, isSecurityFeatureEnabled } from './lib/securityFeatures'
+  import securityLogger from './lib/securityLogging'
+  import { cspReport } from './routes/cspReport'
+  
+  // Apply Content Security Policy if enabled
+  if (isSecurityFeatureEnabled('csp')) {
+    app.use(helmet.contentSecurityPolicy({
+      directives: getCspDirectives(),
+      reportOnly: true // Use report-only mode to not break functionality
+    }))
+  }
+  
+  // Apply additional security headers if enabled
+  if (isSecurityFeatureEnabled('additionalHeaders')) {
+    const additionalHeaders = getAdditionalSecurityHeaders()
+    app.use((req, res, next) => {
+      Object.entries(additionalHeaders).forEach(([header, value]) => {
+        res.setHeader(header, value)
+      })
+      next()
+    })
+  }
+  
+  // Apply security logging if enabled
+  app.use(securityLogger)
+  
+  // CSP violation reporting endpoint
+  app.post('/api/csp/report', cspReport())
 
   /* Hiring header */
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -581,6 +612,8 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.put('/rest/basket/:id/coupon/:coupon', applyCoupon())
   app.get('/rest/admin/application-version', retrieveAppVersion())
   app.get('/rest/admin/application-configuration', retrieveAppConfiguration())
+  app.get('/rest/admin/security-features', security.isAuthorized(), security.isAccounting(), getSecurityFeatures())
+  app.put('/rest/admin/security-features/:feature', security.isAuthorized(), security.isAccounting(), updateSecurityFeature())
   app.get('/rest/repeat-notification', repeatNotification())
   app.get('/rest/continue-code', continueCode())
   app.get('/rest/continue-code-findIt', continueCodeFindIt())

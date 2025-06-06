@@ -5,6 +5,16 @@ server:
     type: string
   baseUrl:
     type: string
+security:
+  csp:
+    enabled:
+      type: boolean
+  additionalHeaders:
+    enabled:
+      type: boolean
+  securityLogs:
+    enabled:
+      type: boolean
 application:
   domain:
     type: string
