@@ -57,7 +57,7 @@ jobs:
           node-version: '20'
 
       - name: Install nodejsscan
-        run: npm install -g nodejsscan
+        run: npm install -g @ajinabraham/njsscan
 
       - name: Run nodejsscan
         run: |
